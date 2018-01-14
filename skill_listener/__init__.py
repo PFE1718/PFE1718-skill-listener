@@ -1,43 +1,16 @@
-# Copyright 2016 Mycroft AI, Inc.
-#
-# This file is part of Mycroft Core.
-#
-# Mycroft Core is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Mycroft Core is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Mycroft Core.  If not, see <http://www.gnu.org/licenses/>.
-
-
-# Visit https://docs.mycroft.ai/skill.creation for more detailed information
-# on the structure of this skill and its containing folder, as well as
-# instructions for designing your own skill based on this template.
-
-
-# Import statements: the list of outside modules you'll be using in your
-# skills, whether from other files in mycroft-core or from external libraries
+import re
+import json
 from os.path import dirname
 
 from adapt.intent import IntentBuilder
+from mycroft.messagebus.client import ws
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import LOG
-from mycroft.messagebus.client import ws
 
 __author__ = 'RReivax'
- 
-# Logger: used for debug lines, like "LOGGER.debug(xyz)". These
-# statements will show up in the command line when running Mycroft.
 
-# The logic of each skill is contained within its own class, which inherits
-# base methods from the MycroftSkill class with the syntax you can see below:
-# "class ____Skill(MycroftSkill)"
+# This classs listens the log websocket and parses events to save skill related logs.
+# Once a skill is started and recognized as a habit, it will call the automation handler. 
 class ListenerSkill(MycroftSkill):
 
     # The constructor of the skill, which calls MycroftSkill's constructor
@@ -45,27 +18,43 @@ class ListenerSkill(MycroftSkill):
         super(ListenerSkill, self).__init__(name="ListenerSkill")
         self.ws = ws.WebsocketClient()
 
-    # This method loads the files needed for the skill's functioning, and
-    # creates and registers each intent that the skill uses
+        self.type_filter = ['mycroft.skill.handler.start',
+                            'speak']
+
     def initialize(self):
+        """
+        Initiliaze intent and start listening logs.
+        """
         LOG.info('INITIALIZE')
         self.load_data_files(dirname(__file__))
 
         listener_intenet = IntentBuilder("ListenerIntent").\
             require("ListenerKeyword").build()
-        self.register_intent(listener_intenet, 
-                            self.handle_listener_intenet)
+        self.register_intent(listener_intenet,
+                             self.handle_listener_intent)
 
-        def echo(message):
-            LOG.info('Listener : ' + message)
-
-
-        self.ws.on('message', echo)
+        self.ws.on('message', self.handle_message)
         self.ws.run_forever()
 
-    def handle_listener_intenet(self, message):
-        self.speak_dialog("confirm")
+    def handle_message(self, message):
+        """
+        This method is called each time a log message is received. It parses
+        it and filters to get only skill usage related messages, and write
+        them into the logs.json file
+        """
+        log = json.JSONDecoder().decode(message)
 
+        # regex pattern corresponds to internal skill functions (skill_id:function)
+        if log['type'] in self.type_filter or re.match('[0-9]*:.*', log['type']) != None:
+            LOG.info('Listener : ' + message)
+            with open("/opt/mycroft/habits/logs.json", "a") as f:
+                f.write(message + '\n')
+        else:
+            LOG.info('Listener pass : ' + message)
+
+    def handle_listener_intent(self, message):
+        """ Intent response to confirm that this skill is running """
+        self.speak_dialog("confirm")
 
     # The "stop" method defines what Mycroft does when told to stop during
     # the skill's execution.
