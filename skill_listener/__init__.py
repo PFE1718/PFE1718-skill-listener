@@ -1,5 +1,6 @@
 import re
 import json
+import datetime
 from os.path import dirname
 
 from adapt.intent import IntentBuilder
@@ -18,14 +19,16 @@ class ListenerSkill(MycroftSkill):
         super(ListenerSkill, self).__init__(name="ListenerSkill")
         self.ws = ws.WebsocketClient()
 
-        self.type_filter = ['mycroft.skill.handler.start',
-                            'speak']
+        self.type_filter = []
+                        #['mycroft.skill.handler.start',
+                        #'mycroft.skill.handler.complete',
+                        #'speak']
 
     def initialize(self):
         """
         Initiliaze intent and start listening logs.
         """
-        LOG.info('INITIALIZE')
+        LOG.info('INITIALIZE Listener')
         self.load_data_files(dirname(__file__))
 
         listener_intenet = IntentBuilder("ListenerIntent").\
@@ -45,10 +48,12 @@ class ListenerSkill(MycroftSkill):
         log = json.JSONDecoder().decode(message)
 
         # regex pattern corresponds to internal skill functions (skill_id:function)
-        if log['type'] in self.type_filter or re.match('[0-9]*:.*', log['type']) != None:
+        if log['type'] in self.type_filter or re.match('-?[0-9]*:.*', log['type']) != None:
             LOG.info('Listener : ' + message)
+            log['datetime'] = str(datetime.datetime.now())
+            message_time = json.dumps(log)
             with open("/opt/mycroft/habits/logs.json", "a") as f:
-                f.write(message + '\n')
+                f.write(message_time + '\n')
         else:
             LOG.info('Listener pass : ' + message)
 
