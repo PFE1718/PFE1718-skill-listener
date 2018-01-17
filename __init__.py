@@ -13,6 +13,13 @@ __author__ = 'RReivax'
 
 
 class ListenerThread(threading.Thread):
+    """
+    This classs listens the log websocket and parses events to save skill
+    related logs. Once a skill is started and recognized as a trigger, it will
+    call the automation handler. Once multiple skills composing a habbit are
+    launched, it will also call the automation handler.
+    """
+
     def __init__(self):
         super(ListenerThread, self).__init__()
         self.wsc = ws.WebsocketClient()
@@ -77,9 +84,8 @@ class ListenerThread(threading.Thread):
 
 class ListenerSkill(MycroftSkill):
     """
-    This classs listens the log websocket and parses events to save skill
-    related logs. Once a skill is started and recognized as a habit, it will
-    call the automation handler.
+    This class launches the listener thread at initialization and handles
+    basic intent response to check if the skill is running.
     """
 
     def __init__(self):
