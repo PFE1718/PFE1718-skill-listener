@@ -59,6 +59,7 @@ class ListenerThread(threading.Thread):
 
             # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
+            log['utterance'] = log['data'].get('utterance', 'No voice command')
             # Removes unwanted elements
             log.pop('context', None)
             log['data'].pop('confidence', None)
@@ -69,7 +70,6 @@ class ListenerThread(threading.Thread):
             log['data'].pop('intent_type', None)
             # Moves voice command field outside "data" field to only keep
             # skill parameters in "data"
-            log['utterance'] = log['data'].get('utterance', 'No voice command')
             # Rename "data" into "parameters"
             log['parameters'] = log.pop('data')
 
