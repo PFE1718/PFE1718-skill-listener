@@ -57,13 +57,25 @@ class ListenerThread(threading.Thread):
             if trigger_id is not None:
                 LOG.info('TRIGGER FOUND ' + trigger_id)
 
-                # Adds datetime field to the event
+            # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
+            # Removes unwanted elements
+            log.pop('context', None)
+            log['data'].pop('confidence', None)
+            log['data'].pop('target', None)
+            log['data'].pop('__tags__', None)
+            log['data'].pop('utterance', None)
+            # Redundant with Type field, so removed
+            log['data'].pop('intent_type', None)
+            # Moves voice command field outside "data" field to only keep
+            # skill parameters in "data"
+            log['utterance'] = log['data'].get('utterance', 'No voice command')
+            # Rename "data" into "parameters"
+            log['parameters'] = log.pop('data')
+
             message_time = json.dumps(log)
             with open("/opt/mycroft/habits/logs.json", "a") as log_file:
                 log_file.write(message_time + '\n')
-        else:
-            LOG.info('Listener pass : ' + message)
 
     def check_trigger(self, log):
         """
