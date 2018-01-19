@@ -6,6 +6,7 @@ import threading
 
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.client import ws
+from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import LOG
 
@@ -55,7 +56,14 @@ class ListenerThread(threading.Thread):
             # Check if intent is a trigger
             trigger_id = self.check_trigger(log)
             if trigger_id is not None:
-                LOG.info('TRIGGER FOUND ' + trigger_id)
+                LOG.info("trigger detected number " + trigger_id)
+                # Call the automation handler by utterance
+                self.wsc.emit(
+                    Message("recognizer_loop:utterance",
+                            {
+                                "utterances":
+                                ["trigger detected number " + str(1)],
+                                "lang": 'en-us'}))
 
             # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
