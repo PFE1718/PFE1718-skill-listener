@@ -56,15 +56,15 @@ class ListenerThread(threading.Thread):
             # Check if intent is a trigger
             trigger_id = self.check_trigger(log)
             if trigger_id is not None:
-                LOG.info("trigger detected number " + trigger_id)
+                LOG.info("trigger detected number " + str(trigger_id))
                 # Call the automation handler by utterance
                 self.wsc.emit(
                     Message("recognizer_loop:utterance",
                             {
                                 "utterances":
-                                ["trigger detected number " + str(1)],
-                                "lang": 'en-us'}))
-
+                                ["trigger detected number " + str(trigger_id)],
+                                "lang": 'en-us'
+                            }))
             # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
             log['utterance'] = log['data'].get('utterance', 'No voice command')
@@ -90,13 +90,12 @@ class ListenerThread(threading.Thread):
         Checks if the intent matches a trigger.
         """
         intent_found = None
-        for trigger_id in self.triggers:
-            if log['type'] == self.triggers[trigger_id]['intent']:
+        for trigger_id, trigger in enumerate(self.triggers):
+            if log['type'] == trigger['intent']:
                 intent_found = trigger_id
                 # Checks if parameters of the intent match those of the trigger
-                for param in self.triggers[trigger_id]['parameters']:
-                    if log['data'].get(param) != \
-                            self.triggers[trigger_id]['parameters'][param]:
+                for param in trigger['parameters']:
+                    if log['data'].get(param) != trigger['parameters'][param]:
                         return None
 
         return intent_found
