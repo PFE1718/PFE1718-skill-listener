@@ -31,13 +31,30 @@ class ListenerThread(threading.Thread):
         with open('/opt/mycroft/habits/triggers.json') as triggers_file:
             self.triggers = json.load(triggers_file)
 
-        # Stores the last user actions to check if matching a habit
-        self.last_intents = []
+        self.habits_to_choose = []
+        for habit_index, habit in enumerate(self.habits):
+            if habit['user_choice'] is False:
+                habit['index'] = habit_index
+                for intent in habit['intents']:
+                    # Variable to keep track of the intent to detect habits
+                    intent['occured'] = False
+
+                self.habits_to_choose.append(habit)
+
+        LOG.info('Listener - ' + str(self.habits_to_choose))
 
         self.daemon = True
         self.start()
 
+    def load_files(self):
+        """ Reloads json files """
+        with open('/opt/mycroft/habits/habits.json') as habits_file:
+            self.habits = json.load(habits_file)
+        with open('/opt/mycroft/habits/triggers.json') as triggers_file:
+            self.triggers = json.load(triggers_file)
+
     def run(self):
+        """ Runs continuously on a separated thread. Listens to the bus"""
         self.wsc.run_forever()
 
     def handle_message(self, message):
@@ -81,6 +98,8 @@ class ListenerThread(threading.Thread):
             # Rename "data" into "parameters"
             log['parameters'] = log.pop('data')
 
+            self.check_intent(log)
+
             message_time = json.dumps(log)
             with open("/opt/mycroft/habits/logs.json", "a") as log_file:
                 log_file.write(message_time + '\n')
@@ -100,6 +119,54 @@ class ListenerThread(threading.Thread):
 
         return intent_found
 
+    def check_intent(self, log):
+        """
+        Checks if an intent is part of an habit. If so, tags the intent and
+        calls check_habit_complted for the concerned habits.
+        """
+        LOG.info("Listener - Checking Intent..." +
+                 str(len(self.habits_to_choose)))
+        log_cmp = dict()
+        intent_cmp = dict()
+
+        # Tags intent as 'occured' in habits
+        for habit in self.habits_to_choose:
+            for intent in habit['intents']:
+                log_cmp['name'] = log['type']
+                log_cmp['parameters'] = log['parameters']
+                intent_cmp['name'] = intent['name']
+                intent_cmp['parameters'] = intent['parameters']
+
+                LOG.info(log_cmp)
+                LOG.info(intent_cmp)
+
+                if sorted(log_cmp.items()) == sorted(intent_cmp.items()):
+                    LOG.info('Intent occured')
+                    intent['occured'] = True
+                    self.check_habit_completed(habit)
+        LOG.info("Listener - Intent checked")
+
+    def check_habit_completed(self, habit):
+        """
+        Checks if all the intents in a habit have occured.
+        """
+        LOG.info("Checking this : " + str(habit))
+        habit_occured = True
+        for intent in habit['intents']:
+            if intent['occured'] is False:
+                habit_occured = False
+                break
+
+        if habit_occured is True:
+            LOG.info('Habit detected number ' + str(habit['index']))
+
+    def inactivity_reset(self):
+        """
+        Resets currently occured intents as they should no longer be part of a
+        habit.
+        """
+        pass
+
 
 class ListenerSkill(MycroftSkill):
     """
@@ -118,9 +185,9 @@ class ListenerSkill(MycroftSkill):
         LOG.info('INITIALIZE Listener')
         self.load_data_files(dirname(__file__))
 
-        listener_intenet = IntentBuilder("ListenerIntent").\
+        listener_intent = IntentBuilder("ListenerIntent").\
             require("ListenerKeyword").build()
-        self.register_intent(listener_intenet,
+        self.register_intent(listener_intent,
                              self.handle_listener_intent)
 
     def handle_listener_intent(self, message):
