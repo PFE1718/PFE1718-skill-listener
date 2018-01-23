@@ -26,6 +26,8 @@ class ListenerThread(threading.Thread):
         self.wsc = ws.WebsocketClient()
         self.wsc.on('message', self.handle_message)
 
+        self.reset_tracking_time = 20
+
         with open('/opt/mycroft/habits/habits.json') as habits_file:
             self.habits = json.load(habits_file)
         with open('/opt/mycroft/habits/triggers.json') as triggers_file:
@@ -41,7 +43,9 @@ class ListenerThread(threading.Thread):
 
                 self.habits_to_choose.append(habit)
 
-        LOG.info('Listener - ' + str(self.habits_to_choose))
+        self.inactivity_tracking_timer = threading.Timer(
+            self.reset_tracking_time, self.inactivity_reset)
+        self.inactivity_tracking_timer.start()
 
         self.daemon = True
         self.start()
@@ -53,6 +57,14 @@ class ListenerThread(threading.Thread):
         with open('/opt/mycroft/habits/triggers.json') as triggers_file:
             self.triggers = json.load(triggers_file)
 
+        self.habits_to_choose = []
+        for habit_index, habit in enumerate(self.habits):
+            if habit['user_choice'] is False:
+                habit['index'] = habit_index
+                for intent in habit['intents']:
+                    # Variable to keep track of the intent to detect habits
+                    intent['occured'] = False
+
     def run(self):
         """ Runs continuously on a separated thread. Listens to the bus"""
         self.wsc.run_forever()
@@ -63,12 +75,18 @@ class ListenerThread(threading.Thread):
         it and filters to get only skill usage related messages, and write
         them into the logs.json file.
         """
-        log = json.JSONDecoder().decode(message)
 
+        log = json.JSONDecoder().decode(message)
         # Regex pattern corresponds to internal skill functions/intent handler
         # (skill_id:function)
         if re.match('-?[0-9]*:.*', log['type']) is not None:
             LOG.info('Listener : ' + message)
+            LOG.info("Listener - Handle message")
+            # Resets inactivity timer
+            self.inactivity_tracking_timer.cancel()
+            self.inactivity_tracking_timer = threading.Timer(
+                self.reset_tracking_time, self.inactivity_reset)
+            self.inactivity_tracking_timer.start()
 
             # Check if intent is a trigger
             trigger_id = self.check_trigger(log)
@@ -165,7 +183,9 @@ class ListenerThread(threading.Thread):
         Resets currently occured intents as they should no longer be part of a
         habit.
         """
-        pass
+        LOG.info("Listener - Inactivity")
+        # Reload habits and triggers to be updated and resets intents occurence
+        self.load_files()
 
 
 class ListenerSkill(MycroftSkill):
