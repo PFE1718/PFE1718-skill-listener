@@ -64,6 +64,7 @@ class ListenerThread(threading.Thread):
                 for intent in habit['intents']:
                     # Variable to keep track of the intent to detect habits
                     intent['occured'] = False
+
                 self.habits_to_choose.append(habit)
 
     def run(self):
@@ -78,11 +79,16 @@ class ListenerThread(threading.Thread):
         """
 
         log = json.JSONDecoder().decode(message)
+
         # Regex pattern corresponds to internal skill functions/intent handler
         # (skill_id:function)
         if re.match('-?[0-9]*:.*', log['type']) is not None:
             LOG.info('Listener : ' + message)
             LOG.info("Listener - Handle message")
+
+            context = log['context']['target']
+            if context is not None:
+                return
             # Resets inactivity timer
             self.inactivity_tracking_timer.cancel()
             self.inactivity_tracking_timer = threading.Timer(
@@ -90,7 +96,7 @@ class ListenerThread(threading.Thread):
             self.inactivity_tracking_timer.start()
 
             # Check if intent is a trigger
-            trigger_id = self.check_trigger(log)
+            self.check_trigger(log)
 
             # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
