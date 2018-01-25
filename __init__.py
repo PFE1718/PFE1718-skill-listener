@@ -64,6 +64,7 @@ class ListenerThread(threading.Thread):
                 for intent in habit['intents']:
                     # Variable to keep track of the intent to detect habits
                     intent['occured'] = False
+                self.habits_to_choose.append(habit)
 
     def run(self):
         """ Runs continuously on a separated thread. Listens to the bus"""
@@ -90,16 +91,7 @@ class ListenerThread(threading.Thread):
 
             # Check if intent is a trigger
             trigger_id = self.check_trigger(log)
-            if trigger_id is not None:
-                LOG.info("trigger detected number " + str(trigger_id))
-                # Call the automation handler by utterance
-                self.wsc.emit(
-                    Message("recognizer_loop:utterance",
-                            {
-                                "utterances":
-                                ["trigger detected number " + str(trigger_id)],
-                                "lang": 'en-us'
-                            }))
+
             # Adds datetime field to the event
             log['datetime'] = str(datetime.datetime.now())
             log['utterance'] = log['data'].get('utterance', 'No voice command')
@@ -116,6 +108,7 @@ class ListenerThread(threading.Thread):
             # Rename "data" into "parameters"
             log['parameters'] = log.pop('data')
 
+            # Check if intent is part of a habit
             self.check_intent(log)
 
             message_time = json.dumps(log)
@@ -134,6 +127,17 @@ class ListenerThread(threading.Thread):
                 for param in trigger['parameters']:
                     if log['data'].get(param) != trigger['parameters'][param]:
                         return None
+
+        if intent_found is not None:
+            LOG.info("Trigger detected number " + str(intent_found))
+            # Call the automation handler by utterance
+            self.wsc.emit(
+                Message("recognizer_loop:utterance",
+                        {
+                            "utterances":
+                            ["trigger detected number " + str(intent_found)],
+                            "lang": 'en-us'
+                        }))
 
         return intent_found
 
@@ -177,6 +181,14 @@ class ListenerThread(threading.Thread):
 
         if habit_occured is True:
             LOG.info('Habit detected number ' + str(habit['index']))
+            # Call the automation handler by utterance
+            self.wsc.emit(
+                Message("recognizer_loop:utterance",
+                        {
+                            "utterances":
+                            ["habit detected number " + str(habit['index'])],
+                            "lang": 'en-us'
+                        }))
 
     def inactivity_reset(self):
         """
