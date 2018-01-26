@@ -18,7 +18,7 @@ Working features:
 
 
 Known issues:
- - Frequency habits detection do not take time into account
+ - 
 
 TODO:
- - Frequency habit detection with time interval (needs to get the interval from the data mining skill)
+ - Test frequency habits detection
