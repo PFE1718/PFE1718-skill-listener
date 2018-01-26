@@ -213,6 +213,13 @@ class ListenerThread(threading.Thread):
         habit.
         """
         LOG.info("Listener - Inactivity")
+        self.wsc.emit(
+            Message("recognizer_loop:utterance",
+                    {
+                        "utterances":
+                            ["start habit mining"],
+                            "lang": 'en-us'
+                    }))
         # Reload habits and triggers to be updated and resets intents occurence
         self.load_files()
 
