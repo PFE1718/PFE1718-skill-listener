@@ -26,7 +26,7 @@ class ListenerThread(threading.Thread):
         self.wsc = ws.WebsocketClient()
         self.wsc.on('message', self.handle_message)
 
-        self.reset_tracking_time = 20
+        self.reset_tracking_time = 300
 
         with open('/opt/mycroft/habits/habits.json') as habits_file:
             self.habits = json.load(habits_file)
@@ -165,9 +165,6 @@ class ListenerThread(threading.Thread):
                 intent_cmp['name'] = intent['name']
                 intent_cmp['parameters'] = intent['parameters']
 
-                LOG.info(log_cmp)
-                LOG.info(intent_cmp)
-
                 if sorted(log_cmp.items()) == sorted(intent_cmp.items()):
                     LOG.info('Intent occured')
                     intent['occured'] = True
@@ -186,6 +183,20 @@ class ListenerThread(threading.Thread):
                 break
 
         if habit_occured is True:
+            # Check if habit is a frequency habit
+            if habit.get('interval_max', None) is not None:
+                now = datetime.datetime.now()
+                habit_time = datetime.datetime(1, 1, 1,
+                                               habit['time'].split(':')[0],
+                                               habit['time'].split(':'[1]))
+                if (now < (habit_time + datetime.timedelta(
+                        minutes=habit['interval_max'])) and
+                    now > (habit_time - datetime.timedelta(
+                        minutes=habit['interval_max']))):
+                    LOG.info("Frequency habit detected")
+                else:
+                    return
+
             LOG.info('Habit detected number ' + str(habit['index']))
             # Call the automation handler by utterance
             self.wsc.emit(
