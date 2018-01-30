@@ -200,19 +200,18 @@ class ListenerThread(threading.Thread):
             # Check if habit is a frequency habit
             if habit.get('interval_max', None) is not None:
                 now = datetime.datetime.now().time()
-                LOG.info(now)
                 habit_time = datetime.datetime(1, 1, 1,
                                                int(habit['time']
                                                    .split(':')[0]),
                                                int(habit['time']
                                                    .split(':')[1]))
+                # if datetime.datetime.now().weekday() in habit['days']:
                 if (now < (habit_time + datetime.timedelta(
                         minutes=float(habit['interval_max']))).time() and
                     now > (habit_time - datetime.timedelta(
                         minutes=float(habit['interval_max']))).time()):
                     LOG.info("Frequency habit detected")
                 else:
-                    LOG.info(habit_time)
                     return
 
             LOG.info('Habit detected number ' + str(habit['index']))
