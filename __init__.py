@@ -28,13 +28,22 @@ class ListenerThread(threading.Thread):
         self.wsc = ws.WebsocketClient()
         self.wsc.on('message', self.handle_message)
 
+        # Time before inactivity callback is launched
         self.reset_tracking_time = 300
 
+        # Load habits file
         with open('/opt/mycroft/habits/habits.json') as habits_file:
             self.habits = json.load(habits_file)
         with open('/opt/mycroft/habits/triggers.json') as triggers_file:
             self.triggers = json.load(triggers_file)
 
+        skill_dir = os.path.dirname(__file__)
+        ignore_filepath = "ignore.json"
+        ignore_path = os.path.join(skill_dir, ignore_filepath)
+        with open(ignore_path) as ignore_file:
+            self.ignored_intents = json.load(ignore_file)
+
+            # Set up array with habits to detect (first time detection)
         self.habits_to_choose = []
         for habit_index, habit in enumerate(self.habits):
             if habit['user_choice'] is False:
@@ -45,10 +54,13 @@ class ListenerThread(threading.Thread):
 
                 self.habits_to_choose.append(habit)
 
+        # Set up callback to reset intent tracking when inactivity is detected.
+        # This callback will also launch the habit miner skill.
         self.inactivity_tracking_timer = threading.Timer(
             self.reset_tracking_time, self.inactivity_reset)
         self.inactivity_tracking_timer.start()
 
+        # Starts listening in background.
         self.daemon = True
         self.start()
 
@@ -79,12 +91,13 @@ class ListenerThread(threading.Thread):
         it and filters to get only skill usage related messages, and write
         them into the logs.json file.
         """
-
         log = json.JSONDecoder().decode(message)
 
         # Regex pattern corresponds to internal skill functions/intent handler
         # (skill_id:function)
-        if re.match('-?[0-9]*:.*', log['type']) is not None:
+
+        if (re.match('-?[0-9]*:.*', log['type']) is not None and
+                log['type'] not in self.ignored_intents):
             LOG.info('Listener : ' + message)
             LOG.info("Listener - Handle message")
 
@@ -186,6 +199,7 @@ class ListenerThread(threading.Thread):
             # Check if habit is a frequency habit
             if habit.get('interval_max', None) is not None:
                 now = datetime.datetime.now()
+                LOG.info(now)
                 habit_time = datetime.datetime(1, 1, 1,
                                                int(habit['time'].split(
                                                    ':')[0]),
