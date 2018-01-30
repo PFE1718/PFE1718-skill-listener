@@ -2,6 +2,7 @@ import re
 import json
 import datetime
 from os.path import dirname
+import os
 import threading
 
 from adapt.intent import IntentBuilder
@@ -11,6 +12,7 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import LOG
 
 __author__ = 'RReivax'
+SKILLS_DIR = '/opt/mycroft/skills'
 
 
 class ListenerThread(threading.Thread):
@@ -166,7 +168,6 @@ class ListenerThread(threading.Thread):
                 intent_cmp['parameters'] = intent['parameters']
 
                 if sorted(log_cmp.items()) == sorted(intent_cmp.items()):
-                    LOG.info('Intent occured')
                     intent['occured'] = True
                     self.check_habit_completed(habit)
         LOG.info("Listener - Intent checked")
@@ -175,7 +176,6 @@ class ListenerThread(threading.Thread):
         """
         Checks if all the intents in a habit have occured.
         """
-        LOG.info("Checking this : " + str(habit))
         habit_occured = True
         for intent in habit['intents']:
             if intent['occured'] is False:
@@ -187,12 +187,14 @@ class ListenerThread(threading.Thread):
             if habit.get('interval_max', None) is not None:
                 now = datetime.datetime.now()
                 habit_time = datetime.datetime(1, 1, 1,
-                                               habit['time'].split(':')[0],
-                                               habit['time'].split(':'[1]))
+                                               int(habit['time'].split(
+                                                   ':')[0]),
+                                               int(habit['time'].split(
+                                                   ':')[1]))
                 if (now < (habit_time + datetime.timedelta(
-                        minutes=habit['interval_max'])) and
+                        minutes=float(habit['interval_max']))) and
                     now > (habit_time - datetime.timedelta(
-                        minutes=habit['interval_max']))):
+                        minutes=float(habit['interval_max'])))):
                     LOG.info("Frequency habit detected")
                 else:
                     return
