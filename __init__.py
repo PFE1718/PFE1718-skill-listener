@@ -36,14 +36,14 @@ class ListenerThread(threading.Thread):
             self.habits = json.load(habits_file)
         with open('/opt/mycroft/habits/triggers.json') as triggers_file:
             self.triggers = json.load(triggers_file)
-
         skill_dir = os.path.dirname(__file__)
         ignore_filepath = "ignore.json"
         ignore_path = os.path.join(skill_dir, ignore_filepath)
+        # Load intents to not log
         with open(ignore_path) as ignore_file:
             self.ignored_intents = json.load(ignore_file)
 
-            # Set up array with habits to detect (first time detection)
+        # Set up array with habits to detect (first time detection)
         self.habits_to_choose = []
         for habit_index, habit in enumerate(self.habits):
             if habit['user_choice'] is False:
@@ -189,6 +189,7 @@ class ListenerThread(threading.Thread):
         """
         Checks if all the intents in a habit have occured.
         """
+        LOG.info(habit)
         habit_occured = True
         for intent in habit['intents']:
             if intent['occured'] is False:
@@ -198,19 +199,20 @@ class ListenerThread(threading.Thread):
         if habit_occured is True:
             # Check if habit is a frequency habit
             if habit.get('interval_max', None) is not None:
-                now = datetime.datetime.now()
+                now = datetime.datetime.now().time()
                 LOG.info(now)
                 habit_time = datetime.datetime(1, 1, 1,
-                                               int(habit['time'].split(
-                                                   ':')[0]),
-                                               int(habit['time'].split(
-                                                   ':')[1]))
+                                               int(habit['time']
+                                                   .split(':')[0]),
+                                               int(habit['time']
+                                                   .split(':')[1]))
                 if (now < (habit_time + datetime.timedelta(
-                        minutes=float(habit['interval_max']))) and
+                        minutes=float(habit['interval_max']))).time() and
                     now > (habit_time - datetime.timedelta(
-                        minutes=float(habit['interval_max'])))):
+                        minutes=float(habit['interval_max']))).time()):
                     LOG.info("Frequency habit detected")
                 else:
+                    LOG.info(habit_time)
                     return
 
             LOG.info('Habit detected number ' + str(habit['index']))
