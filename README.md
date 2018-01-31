@@ -12,13 +12,13 @@ Different cases :
 
 Working features:
  - Trigger detection
+ - Frequency habit detection
  - Habit completed detection
  - Inactivity detection
  - Automation handler skill and Habit miner skill launching
-
 
 Known issues:
  - 
 
 TODO:
- - Test frequency habits detection
+ 
