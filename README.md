@@ -13,7 +13,7 @@ Different cases :
 
 
 ## Examples 
-* "This skill is not made to be called by the user. "
+This skill is not made to be called by the user. 
 
 ## Credits 
 Xavier Hermand (RReivax)
