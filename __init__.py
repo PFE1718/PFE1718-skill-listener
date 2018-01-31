@@ -10,9 +10,16 @@ from mycroft.messagebus.client import ws
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import LOG
+from mycroft.skills.core import intent_handler
+from mycroft.skills.context import adds_context, removes_context
 
 __author__ = 'RReivax'
 SKILLS_DIR = '/opt/mycroft/skills'
+SKILLS_FOLDERS = {
+    "/opt/mycroft/skills/mycroft-skill-listener": "skill listener",
+    "/opt/mycroft/skills/mycroft-habit-miner-skill": "habit miner",
+    "/opt/mycroft/skills/mycroft-automation-handler": "automation handler"
+}
 
 
 class ListenerThread(threading.Thread):
@@ -25,6 +32,7 @@ class ListenerThread(threading.Thread):
 
     def __init__(self):
         super(ListenerThread, self).__init__()
+
         self.wsc = ws.WebsocketClient()
         self.wsc.on('message', self.handle_message)
 
@@ -189,7 +197,6 @@ class ListenerThread(threading.Thread):
         """
         Checks if all the intents in a habit have occured.
         """
-        LOG.info(habit)
         habit_occured = True
         for intent in habit['intents']:
             if intent['occured'] is False:
@@ -249,6 +256,11 @@ class ListenerSkill(MycroftSkill):
 
     def __init__(self):
         super(ListenerSkill, self).__init__(name="ListenerSkill")
+
+        self.to_install = []
+        if not self.check_skills_intallation():
+            return
+
         ListenerThread()
 
     def initialize(self):
@@ -262,6 +274,49 @@ class ListenerSkill(MycroftSkill):
             require("ListenerKeyword").build()
         self.register_intent(listener_intent,
                              self.handle_listener_intent)
+
+    def check_skills_intallation(self):
+        LOG.info("Checking for skills install...")
+        ret = True
+        for folder, skill in SKILLS_FOLDERS.iteritems():
+            if not os.path.isdir(folder):
+                ret = False
+                self.to_install += [skill]
+
+        if not ret:
+            self.set_context("InstallMissingContext")
+            dial = "To use this skill, you also have to install the skill"
+            num_skill = "this skill"
+            skills_list = ""
+            for skill in self.to_install[:-1]:
+                skills_list += skill + ", "
+            if len(self.to_install) > 1:
+                num_skill = "these {} skills".format(len(self.to_install))
+                skills_list += "and "
+                dial += "s"
+            skills_list += self.to_install[-1]
+            self.speak(dial + " " + skills_list +
+                       ". Should I install {} for you?".format(num_skill),
+                       expect_response=True)
+        return ret
+
+    @intent_handler(IntentBuilder("InstallMissingIntent")
+                    .require("YesKeyword")
+                    .require("InstallMissingContext").build())
+    @removes_context("InstallMissingContext")
+    def handle_install_missing(self):
+        for skill in self.to_install:
+            self.emitter.emit(
+                Message("recognizer_loop:utterance",
+                        {"utterances": ["install " + skill],
+                         "lang": 'en-us'}))
+
+    @intent_handler(IntentBuilder("NotInstallMissingIntent")
+                    .require("NoKeyword")
+                    .require("InstallMissingContext").build())
+    @removes_context("InstallMissingContext")
+    def handle_not_install_missing(self):
+        pass
 
     def handle_listener_intent(self, message):
         """ Intent response to confirm that this skill is running. """
