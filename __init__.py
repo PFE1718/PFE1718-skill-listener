@@ -33,7 +33,7 @@ __author__ = 'RReivax'
 SKILLS_DIR = '/opt/mycroft/skills'
 SKILLS_FOLDERS = {
     "/opt/mycroft/skills/PFE1718-skill-listener": "skill listener",
-    "/opt/mycroft/skills/PFE1718-habit-miner-skill": "habit miner",
+    "/opt/mycroft/skills/PFE1718-habit-miner": "habit miner",
     "/opt/mycroft/skills/PFE1718-automation-handler": "automation handler"
 }
 
@@ -55,7 +55,7 @@ class ListenerThread(threading.Thread):
         self.check_install = False
 
         # Time before inactivity callback is launched
-        self.reset_tracking_time = 300
+        self.reset_tracking_time = 100
 
         # Load habits file
         with open('/opt/mycroft/habits/habits.json') as habits_file:
@@ -136,8 +136,11 @@ class ListenerThread(threading.Thread):
         # Regex pattern corresponds to internal skill functions/intent handler
         # (skill_id:function)
 
-        if (re.match('-?[0-9]*:.*', log['type']) is not None and
-                log['type'] not in self.ignored_intents):
+        if (re.match('-?[0-9]*:.*', log['type'])) is not None:
+            for ignored_intent in self.ignored_intents:
+                if ignored_intent in log['type']:
+                    return
+
             LOG.info('Listener : ' + message)
             LOG.info("Listener - Handle message")
 
