@@ -1,4 +1,4 @@
-## Listerner Skill
+## Skill Listener
 This skills handles logging and detections of known habits. 
 
 ## Description 
