@@ -55,7 +55,7 @@ class ListenerThread(threading.Thread):
         self.check_install = False
 
         # Time before inactivity callback is launched
-        self.reset_tracking_time = 100
+        self.reset_tracking_time = 300
 
         # Load habits file
         with open('/opt/mycroft/habits/habits.json') as habits_file:
