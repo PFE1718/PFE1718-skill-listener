@@ -16,9 +16,9 @@ from mycroft.skills.context import adds_context, removes_context
 __author__ = 'RReivax'
 SKILLS_DIR = '/opt/mycroft/skills'
 SKILLS_FOLDERS = {
-    "/opt/mycroft/skills/mycroft-skill-listener": "skill listener",
-    "/opt/mycroft/skills/mycroft-habit-miner-skill": "habit miner",
-    "/opt/mycroft/skills/mycroft-automation-handler": "automation handler"
+    "/opt/mycroft/skills/PFE1718-skill-listener": "skill listener",
+    "/opt/mycroft/skills/PFE1718-habit-miner-skill": "habit miner",
+    "/opt/mycroft/skills/PFE1718-automation-handler": "automation handler"
 }
 
 
