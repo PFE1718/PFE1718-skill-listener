@@ -1,3 +1,19 @@
+# Copyright 2018 Adrien CHEVRIER, Florian HEPP, Xavier HERMAND,
+#                Gauthier LEONARD, Audrey LY, Elliot MAINCOURT
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import re
 import json
 import datetime
@@ -36,6 +52,8 @@ class ListenerThread(threading.Thread):
         self.wsc = ws.WebsocketClient()
         self.wsc.on('message', self.handle_message)
 
+        self.check_install = False
+
         # Time before inactivity callback is launched
         self.reset_tracking_time = 300
 
@@ -71,6 +89,20 @@ class ListenerThread(threading.Thread):
         # Starts listening in background.
         self.daemon = True
         self.start()
+
+    def check_skills_intallation(self):
+        """
+        Launches intent that check if the habiter miner and automation handler
+        skills are installed.
+        """
+        LOG.info("Listener - CHECK INSTALL")
+        self.wsc.emit(
+            Message("recognizer_loop:utterance",
+                    {
+                        "utterances":
+                        ["listener skill dependencies install"],
+                        "lang": 'en-us'
+                    }))
 
     def load_files(self):
         """ Reloads json files """
@@ -237,6 +269,10 @@ class ListenerThread(threading.Thread):
         habit.
         """
         LOG.info("Listener - Inactivity")
+        if not self.check_install:
+            self.check_skills_intallation()
+            self.check_install = True
+
         self.wsc.emit(
             Message("recognizer_loop:utterance",
                     {
@@ -259,8 +295,6 @@ class ListenerSkill(MycroftSkill):
 
         self.wsc = ws.WebsocketClient()
         self.to_install = []
-        if not self.check_skills_intallation():
-            return
 
         ListenerThread()
 
@@ -276,7 +310,12 @@ class ListenerSkill(MycroftSkill):
         self.register_intent(listener_intent,
                              self.handle_listener_intent)
 
-    def check_skills_intallation(self):
+        install_intent = IntentBuilder("InstallIntent").\
+            require("InstallKeyword").build()
+        self.register_intent(install_intent,
+                             self.handle_skill_installation)
+
+    def handle_skill_installation(self):
         LOG.info("Checking for skills install...")
         ret = True
         for folder, skill in SKILLS_FOLDERS.iteritems():
@@ -299,7 +338,6 @@ class ListenerSkill(MycroftSkill):
             self.speak(dial + " " + skills_list +
                        ". Should I install {} for you?".format(num_skill),
                        expect_response=True)
-        return ret
 
     @intent_handler(IntentBuilder("InstallMissingIntent")
                     .require("YesKeyword")
@@ -307,7 +345,7 @@ class ListenerSkill(MycroftSkill):
     @removes_context("InstallMissingContext")
     def handle_install_missing(self):
         for skill in self.to_install:
-            self.wsc.emit(
+            self.emitter.emit(
                 Message("recognizer_loop:utterance",
                         {"utterances": ["install " + skill],
                          "lang": 'en-us'}))
@@ -322,6 +360,9 @@ class ListenerSkill(MycroftSkill):
     def handle_listener_intent(self, message):
         """ Intent response to confirm that this skill is running. """
         self.speak_dialog("confirm")
+        self.emitter.emit(Message("recognizer_loop:utterance",
+                                  {"utterances": ["joke"],
+                                   "lang": 'en-us'}))
 
     def stop(self):
         """
