@@ -1,5 +1,5 @@
 ## Skill Listener
-This skills handles logging and detections of known habits. 
+This skill handles logging and detections of known habits. 
 
 ## Description 
 This skill is made to work with the full Habits Automation project https://github.com/PFE1718/mycroft-skills-automation. 
