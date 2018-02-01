@@ -257,6 +257,7 @@ class ListenerSkill(MycroftSkill):
     def __init__(self):
         super(ListenerSkill, self).__init__(name="ListenerSkill")
 
+        self.wsc = ws.WebsocketClient()
         self.to_install = []
         if not self.check_skills_intallation():
             return
@@ -306,7 +307,7 @@ class ListenerSkill(MycroftSkill):
     @removes_context("InstallMissingContext")
     def handle_install_missing(self):
         for skill in self.to_install:
-            self.emitter.emit(
+            self.wsc.emit(
                 Message("recognizer_loop:utterance",
                         {"utterances": ["install " + skill],
                          "lang": 'en-us'}))
