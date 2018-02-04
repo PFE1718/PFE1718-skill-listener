@@ -184,7 +184,7 @@ class ListenerThread(threading.Thread):
             self.check_intent(log)
 
             message_time = json.dumps(log)
-            with open(os.path.join(HABITS_FOLDER, 'logs.json', "a")) as log_f:
+            with open(os.path.join(HABITS_FOLDER, 'logs.json'), "a") as log_f:
                 log_f.write(message_time + '\n')
 
     def check_trigger(self, log):
