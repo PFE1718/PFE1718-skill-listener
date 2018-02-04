@@ -107,11 +107,18 @@ class ListenerThread(threading.Thread):
 
     def load_files(self):
         """ Reloads json files """
-        with open('/opt/mycroft/habits/habits.json') as habits_file:
+        with open(os.path.join(HABITS_FOLDER, 'habits.json')) as habits_file:
             self.habits = json.load(habits_file)
-        with open('/opt/mycroft/habits/triggers.json') as triggers_file:
-            self.triggers = json.load(triggers_file)
+        with open(os.path.join(HABITS_FOLDER, 'triggers.json')) as triggers_f:
+            self.triggers = json.load(triggers_f)
+        skill_dir = os.path.dirname(__file__)
+        ignore_filepath = "ignore.json"
+        ignore_path = os.path.join(skill_dir, ignore_filepath)
+        # Load intents to not log
+        with open(ignore_path) as ignore_file:
+            self.ignored_intents = json.load(ignore_file)
 
+        # Set up array with habits to detect (first time detection)
         self.habits_to_choose = []
         for habit_index, habit in enumerate(self.habits):
             if habit['user_choice'] is False:
