@@ -36,6 +36,7 @@ SKILLS_FOLDERS = {
     "/opt/mycroft/skills/PFE1718-habit-miner": "habit miner",
     "/opt/mycroft/skills/PFE1718-automation-handler": "automation handler"
 }
+HABITS_FOLDER = '/opt/mycroft/skills/PFE1718-skill-listener/habits'
 
 
 class ListenerThread(threading.Thread):
@@ -58,10 +59,10 @@ class ListenerThread(threading.Thread):
         self.reset_tracking_time = 300
 
         # Load habits file
-        with open('/opt/mycroft/habits/habits.json') as habits_file:
+        with open(os.path.join(HABITS_FOLDER, 'habits.json')) as habits_file:
             self.habits = json.load(habits_file)
-        with open('/opt/mycroft/habits/triggers.json') as triggers_file:
-            self.triggers = json.load(triggers_file)
+        with open(os.path.join(HABITS_FOLDER, 'triggers.json')) as triggers_f:
+            self.triggers = json.load(triggers_f)
         skill_dir = os.path.dirname(__file__)
         ignore_filepath = "ignore.json"
         ignore_path = os.path.join(skill_dir, ignore_filepath)
