@@ -36,7 +36,7 @@ SKILLS_FOLDERS = {
     "/opt/mycroft/skills/PFE1718-habit-miner": "habit miner",
     "/opt/mycroft/skills/PFE1718-automation-handler": "automation handler"
 }
-HABITS_FOLDER = '/opt/mycroft/skills/PFE1718-skill-listener/habits'
+HABITS_FOLDER = '~/.mycroft/skills/ListenerSkill/habits'
 
 
 class ListenerThread(threading.Thread):

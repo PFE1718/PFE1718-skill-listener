@@ -1,8 +1,8 @@
 #This file is for any packages you need installed for your skill to run
-if [ ! -d "/opt/mycroft/skills/PFE1718-skill-listener/habits" ]; then
-   mkdir /opt/mycroft/skills/PFE1718-skill-listener/habits
-   touch /opt/mycroft/skills/PFE1718-skill-listener/habits/logs.json
-   echo '[]' > /opt/mycroft/skills/PFE1718-skill-listener/habits/habits.json
-   echo '[]' > /opt/mycroft/skills/PFE1718-skill-listener/habits/triggers.json
+if [ ! -d "~/.mycroft/skills/ListenerSkill/habits" ]; then
+   mkdir -p ~/.mycroft/skills/ListenerSkill/habits
+   touch ~/.mycroft/skills/ListenerSkill/habits/logs.json
+   echo '[]' > ~/.mycroft/skills/ListenerSkill/habits/habits.json
+   echo '[]' > ~/.mycroft/skills/ListenerSkill/habits/triggers.json
 #   sudo chmod -R ugo+rw /opt/mycroft/habits
 fi
