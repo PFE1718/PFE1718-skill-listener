@@ -184,8 +184,8 @@ class ListenerThread(threading.Thread):
             self.check_intent(log)
 
             message_time = json.dumps(log)
-            with open("/opt/mycroft/habits/logs.json", "a") as log_file:
-                log_file.write(message_time + '\n')
+            with open(os.path.join(HABITS_FOLDER, 'logs.json', "a")) as log_f:
+                log_f.write(message_time + '\n')
 
     def check_trigger(self, log):
         """
@@ -316,12 +316,12 @@ class ListenerSkill(MycroftSkill):
         LOG.info('INITIALIZE Listener')
         self.load_data_files(dirname(__file__))
 
-        listener_intent = IntentBuilder("ListenerIntent").\
+        listener_intent = IntentBuilder("ListenerIntentListener").\
             require("ListenerKeyword").build()
         self.register_intent(listener_intent,
                              self.handle_listener_intent)
 
-        install_intent = IntentBuilder("InstallIntent").\
+        install_intent = IntentBuilder("InstallIntentListener").\
             require("InstallKeyword").build()
         self.register_intent(install_intent,
                              self.handle_skill_installation)
@@ -335,7 +335,7 @@ class ListenerSkill(MycroftSkill):
                 self.to_install += [skill]
 
         if not ret:
-            self.set_context("InstallMissingContext")
+            self.set_context("InstallMissingContextListener")
             dial = "To use the skill listener, you also have to install \
                     the skill"
             num_skill = "this skill"
@@ -351,10 +351,10 @@ class ListenerSkill(MycroftSkill):
                        ". Should I install {} for you?".format(num_skill),
                        expect_response=True)
 
-    @intent_handler(IntentBuilder("InstallMissingIntent")
+    @intent_handler(IntentBuilder("InstallMissingIntentListener")
                     .require("YesKeyword")
-                    .require("InstallMissingContext").build())
-    @removes_context("InstallMissingContext")
+                    .require("InstallMissingContextListener").build())
+    @removes_context("InstallMissingContextListener")
     def handle_install_missing(self):
         for skill in self.to_install:
             self.emitter.emit(
@@ -362,10 +362,10 @@ class ListenerSkill(MycroftSkill):
                         {"utterances": ["install " + skill],
                          "lang": 'en-us'}))
 
-    @intent_handler(IntentBuilder("NotInstallMissingIntent")
+    @intent_handler(IntentBuilder("NotInstallMissingIntentListener")
                     .require("NoKeyword")
-                    .require("InstallMissingContext").build())
-    @removes_context("InstallMissingContext")
+                    .require("InstallMissingContextListener").build())
+    @removes_context("InstallMissingContextListener")
     def handle_not_install_missing(self):
         pass
 
