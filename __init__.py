@@ -59,9 +59,11 @@ class ListenerThread(threading.Thread):
         self.reset_tracking_time = 300
 
         # Load habits file
-        with open(os.path.join(HABITS_FOLDER, 'habits.json')) as habits_file:
+        with open(os.path.expanduser(
+                os.path.join(HABITS_FOLDER, 'habits.json'))) as habits_file:
             self.habits = json.load(habits_file)
-        with open(os.path.join(HABITS_FOLDER, 'triggers.json')) as triggers_f:
+        with open(os.path.expanduser(
+                os.path.join(HABITS_FOLDER, 'triggers.json'))) as triggers_f:
             self.triggers = json.load(triggers_f)
         skill_dir = os.path.dirname(__file__)
         ignore_filepath = "ignore.json"
@@ -107,9 +109,11 @@ class ListenerThread(threading.Thread):
 
     def load_files(self):
         """ Reloads json files """
-        with open(os.path.join(HABITS_FOLDER, 'habits.json')) as habits_file:
+        with open(os.path.expanduser(
+                os.path.join(HABITS_FOLDER, 'habits.json'))) as habits_file:
             self.habits = json.load(habits_file)
-        with open(os.path.join(HABITS_FOLDER, 'triggers.json')) as triggers_f:
+        with open(os.path.expanduser(
+                os.path.join(HABITS_FOLDER, 'triggers.json'))) as triggers_f:
             self.triggers = json.load(triggers_f)
         skill_dir = os.path.dirname(__file__)
         ignore_filepath = "ignore.json"
@@ -184,7 +188,8 @@ class ListenerThread(threading.Thread):
             self.check_intent(log)
 
             message_time = json.dumps(log)
-            with open(os.path.join(HABITS_FOLDER, 'logs.json'), "a") as log_f:
+            with open(os.path.expanduser(
+                    os.path.join(HABITS_FOLDER, 'logs.json')), "a") as log_f:
                 log_f.write(message_time + '\n')
 
     def check_trigger(self, log):
