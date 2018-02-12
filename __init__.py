@@ -156,9 +156,10 @@ class ListenerThread(threading.Thread):
             LOG.info('Listener : ' + message)
             LOG.info("Listener - Handle message")
 
-            context = log['context']['target']
-            if context is not None:
-                return
+            if log['context'] is not None:
+                context = log['context']['target']
+                if context is not None:
+                    return
             # Resets inactivity timer
             self.inactivity_tracking_timer.cancel()
             self.inactivity_tracking_timer = threading.Timer(
